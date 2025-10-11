@@ -1,0 +1,55 @@
+{
+  "name": "@jyostudio/lyric",
+  "version": "1.0.0",
+  "description": "lyric parser and formatter",
+  "license": "MIT",
+  "author": "nivk",
+  "source": "src/lyric.ts",
+  "main": "src/lyric.ts",
+  "unpkg": "dist/lyric.js",
+  "jsdelivr": "dist/lyric.js",
+  "type": "module",
+  "types": "src/lyric.d.ts",
+  "typings": "src/lyric.d.ts",
+  "scripts": {
+    "publish": "npm publish --access public",
+    "build": "webpack --mode=production",
+    "dev": "webpack --watch --mode=development",
+    "bench": "node ./test/bench.js",
+    "bench:stream": "node ./test/bench-stream.js",
+    "typecheck": "npx -y tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "lyric",
+    "lrc",
+    "trc",
+    "qrc",
+    "krc",
+    "ksc",
+    "webcomponents"
+  ],
+  "engines": {
+    "node": "^23"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@babel/plugin-transform-runtime": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.26.0",
+    "@babel/runtime-corejs3": "^7.28.0",
+    "babel-loader": "^10.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "core-js": "^3.45.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^6.0.0-dev.20250917",
+    "webpack": "^5.100.2",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-stats-viewer-plugin": "^1.1.1"
+  },
+  "dependencies": {
+    "@types/pako": "^2.0.4",
+    "pako": "^2.1.0"
+  }
+}

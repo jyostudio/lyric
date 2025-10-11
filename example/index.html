@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>原生歌词演示</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, PingFang SC, Helvetica, Arial, sans-serif;
+            background: #111;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0 0 12px;
+            font-weight: 600;
+        }
+
+        a {
+            color: #4dabf7;
+        }
+
+        .layout {
+            max-width: 1080px;
+            margin: 32px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 32px;
+        }
+
+        .panel {
+            background: #1d1d1d;
+            border: 1px solid #262626;
+            border-radius: 14px;
+            padding: 18px 20px 20px;
+            position: relative;
+        }
+
+        .panel+.panel {
+            margin-top: 16px;
+        }
+
+        fieldset {
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 14px 14px;
+            margin: 0 0 16px;
+        }
+
+        fieldset legend {
+            padding: 0 6px;
+            font-size: 12px;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            margin-bottom: 8px;
+            gap: 6px;
+            color: #ccc;
+        }
+
+        label span {
+            flex: 1;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background: #111;
+            color: #eee;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 13px;
+            flex: 1.4;
+        }
+
+        input[type="color"] {
+            padding: 0;
+            width: 44px;
+            height: 28px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #111;
+        }
+
+        input:focus,
+        select:focus {
+            outline: 1px solid #3d82ff;
+        }
+
+        .toggle {
+            width: 40px;
+            height: 20px;
+            appearance: none;
+            background: #333;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid #444;
+            transition: .25s;
+        }
+
+        .toggle:checked {
+            background: #2463eb;
+        }
+
+        .toggle:before {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            transition: .25s;
+        }
+
+        .toggle:checked:before {
+            transform: translateX(20px);
+        }
+
+        button {
+            cursor: pointer;
+            background: #2463eb;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: .5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.secondary {
+            background: #333;
+            color: #ddd;
+        }
+
+        button[disabled] {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        /* 播放器区域 */
+        .player-block {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        .status-line {
+            font-size: 12px;
+            color: #888;
+            letter-spacing: .5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-line span {
+            white-space: nowrap;
+        }
+
+        /* 歌词区域 */
+        .lyric-shell {
+            position: relative;
+            height: 560px;
+            overflow: hidden;
+            background: #0d0d0d;
+            border: 1px solid #262626;
+            border-radius: 18px;
+        }
+
+        .lyric_wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            user-select: none;
+            cursor: grab;
+        }
+
+        .lyric_wrapper.dragging {
+            cursor: grabbing;
+        }
+
+        .lyric_innerFrame {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            top: 50%;
+            will-change: transform;
+        }
+
+        .lyric_row {
+            font-size: 24px;
+            line-height: 1.75;
+            padding: 4px 0;
+            margin: 0;
+            /* 让对齐方式继承自父容器（由 JS 动态设置到 #lyricInner） */
+            text-align: inherit;
+            color: #5f6368;
+            transition: color .35s, filter .35s;
+            filter: blur(.15px);
+        }
+
+        .lyric_row.active {
+            color: var(--colorHighlight, #fff);
+            font-weight: 600;
+            filter: none;
+        }
+
+        .lyric_row.state-past {
+            color: var(--colorAfter, #ffb347);
+        }
+
+        .lyric_row.state-future {
+            color: var(--colorBefore, #42d392);
+        }
+
+        .lyric_row.state-current {
+            color: var(--colorHighlight, #fff);
+            font-weight: 600;
+        }
+
+        /* 逐行渐变：非逐字模式下，将渐变应用在承载文本的子元素上 */
+        .lyric_wordFrame.line-grad {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        /* 折行分段的物理行 clip */
+        .segline.segline-clip {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .line_textProgress {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            font-weight: 600;
+        }
+
+        .lyric_row .lyric_wordFrame {
+            display: inline-block;
+            position: relative;
+            /* 改善西文排版的字偶距与连字（对逐字分片影响有限，但尽量贴近原始间距） */
+            font-kerning: normal;
+            font-variant-ligatures: common-ligatures contextual discretionary-ligatures;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .lyric_row .lyric_word {
+            /* 逐字高亮时避免额外间距：取消 inline-block 与左右 padding */
+            display: inline;
+            white-space: pre-wrap;
+            position: relative;
+            padding: 0;
+            margin: 0;
+            letter-spacing: 0;
+        }
+
+        .lyric_word__single {
+            opacity: .9;
+        }
+
+        .lyric_word__single.active {
+            color: var(--colorHighlight, #fff);
+            font-weight: 600;
+        }
+
+        .lyric_word__done {
+            color: var(--colorAfter, #ffb347);
+        }
+
+        .lyric_word__future {
+            color: var(--colorBefore, #42d392);
+        }
+
+        .lyric_word__current {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, var(--colorAfter, #ffb347) 0%, var(--colorBefore, #42d392) 0%);
+            font-weight: 600;
+        }
+
+        .assist-line {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 0;
+            border-top: 1px dashed #222;
+            pointer-events: none;
+        }
+
+        .control-float {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(6px);
+            padding: 8px 12px 10px;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            font-size: 11px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-float.show {
+            display: flex;
+        }
+
+        .control-float b {
+            font-weight: 600;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .small {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .empty-tip {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .footer-note {
+            font-size: 11px;
+            color: #555;
+            margin-top: 28px;
+            text-align: center;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px 4px;
+            font-size: 11px;
+            border: 1px solid #333;
+            border-radius: 999px;
+            background: #1b1b1b;
+            color: #888;
+            margin-right: 6px;
+        }
+
+        .badge-online {
+            color: #14b8a6;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .lyric_subline {
+            display: block;
+            line-height: 1.35;
+        }
+
+        .lyric_subline.secondary {
+            margin-top: 4px;
+            font-size: .78em;
+            color: var(--colorTranslation, #8a8f95);
+        }
+
+        .lyric_row.active .lyric_subline.secondary {
+            color: var(--colorTranslation, #8a8f95);
+        }
+
+        .lyric_subline.secondary .lyric_word {
+            color: inherit;
+        }
+
+        .lyric_row .lyric_wordFrame.lyric_subline {
+            display: block;
+            width: 100%;
+        }
+    </style>
+    <script type="module" src="../dist/jyo-lyric.js"></script>
+    <script type="module">
+        const audio = document.getElementById('audio');
+        const el = document.querySelector('jyo-lyric');
+        const audioFileInput = document.getElementById('audioFile');
+        const lyricFileInput = document.getElementById('lyricFile');
+        const optFontSize = document.getElementById('optFontSize');
+        const optSplit = document.getElementById('optSplit');
+        const optAlign = document.getElementById('optAlign');
+        const optColorBefore = document.getElementById('optColorBefore');
+        const optColorAfter = document.getElementById('optColorAfter');
+        const optColorHighlight = document.getElementById('optColorHighlight');
+        const optColorTranslation = document.getElementById('optColorTranslation');
+        const optGradient = document.getElementById('optGradient');
+        const optLang1 = document.getElementById('optLang1');
+        const optLang2 = document.getElementById('optLang2');
+        const optScrollMs = document.getElementById('optScrollMs');
+        const btnPlay = document.getElementById('btnPlay');
+        const btnScrollTop = document.getElementById('btnScrollTop');
+        const btnClear = document.getElementById('btnClear');
+
+        function applyStyles() {
+            if (!el) return;
+            el.style.setProperty('--colorBefore', optColorBefore.value);
+            el.style.setProperty('--colorAfter', optColorAfter.value);
+            el.style.setProperty('--colorHighlight', optColorHighlight.value);
+            el.style.setProperty('--colorTranslation', optColorTranslation.value);
+            el.setAttribute('align', optAlign.value);
+            el.setAttribute('font-size', String(parseInt(optFontSize.value) || 24));
+            el.setAttribute('line-gap', String(parseInt(optSplit.value) || 20));
+            el.setAttribute('scroll-ms', String(parseInt(optScrollMs.value) || 0));
+            el.setAttribute('gradient', optGradient.checked ? 'true' : 'false');
+            el.setAttribute('show-lang1', optLang1.checked ? 'true' : 'false');
+            el.setAttribute('show-lang2', optLang2.checked ? 'true' : 'false');
+        }
+
+        if (audioFileInput) audioFileInput.addEventListener('change', () => {
+            const f = audioFileInput.files?.[0]; if (!f) return;
+            audio.src = URL.createObjectURL(f);
+        });
+        if (lyricFileInput) lyricFileInput.addEventListener('change', async () => {
+            const f = lyricFileInput.files?.[0]; if (!f || !el) return;
+            const ab = await f.arrayBuffer();
+            // @ts-ignore - call component public API
+            el.loadFromBuffer(new Uint8Array(ab), f.name);
+        });
+
+        if (optFontSize) optFontSize.addEventListener('input', applyStyles);
+        if (optSplit) optSplit.addEventListener('input', applyStyles);
+        if (optAlign) optAlign.addEventListener('change', applyStyles);
+        if (optColorBefore) optColorBefore.addEventListener('input', applyStyles);
+        if (optColorAfter) optColorAfter.addEventListener('input', applyStyles);
+        if (optColorHighlight) optColorHighlight.addEventListener('input', applyStyles);
+        if (optColorTranslation) optColorTranslation.addEventListener('input', applyStyles);
+        if (optGradient) optGradient.addEventListener('change', applyStyles);
+        if (optLang1) optLang1.addEventListener('change', applyStyles);
+        if (optLang2) optLang2.addEventListener('change', applyStyles);
+        if (optScrollMs) optScrollMs.addEventListener('input', applyStyles);
+
+        if (btnPlay) btnPlay.addEventListener('click', () => { if (audio.src) audio.paused ? audio.play() : audio.pause(); });
+        if (btnScrollTop) btnScrollTop.addEventListener('click', () => { el?.scrollToCurrent(false); });
+        if (btnClear) btnClear.addEventListener('click', () => { if (!el) return; el.removeAttribute('src'); /* @ts-ignore */ el.clear(); });
+
+        // 主动驱动组件时间：使用 rAF 提升逐字平滑度
+        let _raf = 0;
+        function drive() {
+            if (!audio || !el) return;
+            // @ts-ignore public API
+            el.setCurrentTime(audio.currentTime || 0);
+            _raf = requestAnimationFrame(drive);
+        }
+        function stopDrive() { if (_raf) cancelAnimationFrame(_raf); _raf = 0; }
+        audio.addEventListener('play', () => { stopDrive(); drive(); });
+        audio.addEventListener('pause', () => { stopDrive(); });
+        audio.addEventListener('seeking', () => { /* @ts-ignore */ el?.setCurrentTime(audio.currentTime || 0); });
+        audio.addEventListener('seeked', () => { /* @ts-ignore */ el?.setCurrentTime(audio.currentTime || 0); });
+        audio.addEventListener('timeupdate', () => { /* @ts-ignore */ el?.setCurrentTime(audio.currentTime || 0); });
+
+        // 初始化同步一次
+        applyStyles();
+    </script>
+</head>
+
+<body>
+    <div class="layout">
+        <div class="left panel">
+            <h1>歌词参数</h1>
+            <fieldset>
+                <legend>歌曲</legend>
+                <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+                    <label><span>本地音频</span><input id="audioFile" type="file" accept="audio/*" /></label>
+                    <label><span>本地歌词</span><input id="lyricFile" type="file" accept=".lrc,.krc,.trc,.qrc,.ksc,.txt" /></label>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>样式</legend>
+                <label><span>字体大小</span><input id="optFontSize" type="number" min="12" max="60" value="24" /></label>
+                <label><span>行距(px)</span><input id="optSplit" type="number" min="0" max="120" value="20" /></label>
+                <label><span>对齐</span><select id="optAlign">
+                        <option value="center">居中</option>
+                        <option value="left">靠左</option>
+                        <option value="right">靠右</option>
+                    </select></label>
+                <label><span>之前颜色（Before）</span><input id="optColorBefore" type="color" value="#42d392" /></label>
+                <label><span>之后颜色（After）</span><input id="optColorAfter" type="color" value="#ffb347" /></label>
+                <label><span>高亮颜色（Highlight）</span><input id="optColorHighlight" type="color" value="#ffffff" /></label>
+                <label><span>译文颜色（Translation）</span><input id="optColorTranslation" type="color"
+                        value="#8a8f95" /></label>
+                <label><span>显示渐变</span><input id="optGradient" class="toggle" type="checkbox" checked /></label>
+                <label><span>显示原文</span><input id="optLang1" class="toggle" type="checkbox" checked /></label>
+                <label><span>显示翻译</span><input id="optLang2" class="toggle" type="checkbox" checked /></label>
+                <label><span>滚动动画(ms)</span><input id="optScrollMs" type="number" min="0" max="2000"
+                        value="280" /></label>
+            </fieldset>
+            <fieldset>
+                <legend>控制</legend>
+                <div class="actions">
+                    <button id="btnPlay">播放 / 暂停</button>
+                    <button id="btnScrollTop" class="secondary">回到当前行</button>
+                    <button id="btnClear" class="secondary">清空</button>
+                </div>
+            </fieldset>
+            <div class="footer-note">使用 dist/lyric.js 解析<br /><span class="chip mono">原生实现</span></div>
+        </div>
+        <div class="right panel player-block">
+            <audio id="audio" controls preload="auto" src=""></audio>
+            <jyo-lyric src="" align="center" font-size="24" line-gap="20"
+                style="display:block; height:100%; --colorBefore:#42d392; --colorAfter:#ffb347; --colorHighlight:#ffffff; --colorTranslation:#8a8f95;">
+                <button slot="ref-left">左侧内容</button>
+                <div slot="ref-center" style="font-size:18px;color:#bbb;">中间内容</div>
+                <button slot="ref-right">右侧内容</button>
+            </jyo-lyric>
+        </div>
+    </div>
+</body>
+
+</html>
