@@ -1,0 +1,1 @@
+{"version":3,"file":"krc.d.ts","sourceRoot":"","sources":["../../src/parsers/krc.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,UAAU,CAAC;AA+D7B;;;;GAIG;AACH,qBAAa,SAAS;;IAClB;;;;OAIG;IACH,MAAM,CAAC,KAAK,CAAC,KAAK,EAAE,KAAK,EAAE,MAAM,EAAE,WAAW;CA8EjD;AAED;;;GAGG;AACH,qBAAa,YAAY;IACrB;;;;OAIG;IACH,MAAM,CAAC,QAAQ,CAAC,KAAK,EAAE,KAAK,GAAG,WAAW;CAyI7C"}
