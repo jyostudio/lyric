@@ -1,4 +1,8 @@
+[English](./README-en.md)
+
 # @jyostudio/lyric
+
+![预览](./example/preview.png)
 
 一个纯 TypeScript 实现的歌词解析与渲染组件库，包含：
 - 核心解析与控制模块：`dist/lyric.js`（默认导出 `Lyric`，命名导出 `LyricController`）

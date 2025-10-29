@@ -1,6 +1,6 @@
 {
   "name": "@jyostudio/lyric",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "lyric parser and formatter",
   "license": "MIT",
   "author": "nivk",
@@ -31,6 +31,10 @@
   "engines": {
     "node": "^23"
   },
+  "bugs": {
+    "url": "https://github.com/jyostudio/lyric/issues"
+  },
+  "homepage": "https://github.com/jyostudio/lyric#readme",
   "devDependencies": {
     "@babel/core": "^7.28.0",
     "@babel/plugin-proposal-decorators": "^7.28.0",
